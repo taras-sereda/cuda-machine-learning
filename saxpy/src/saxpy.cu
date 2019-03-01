@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include <cuda_runtime.h>
 
@@ -39,14 +38,30 @@ int main(int argc, char** argv) {
         cudaMalloc(&d_x, N*sizeof(float));
         cudaMalloc(&d_y, N*sizeof(float));
        
-        printf("size of float %lu\n", sizeof(float)); 
-        sleep(3);
-        printf("sleeping a bit.\n"); 
-
+        for (int i = 0; i < N; i++) {
+            x[i] = 1.0f;
+            y[i] = 2.0f;
+	}
 	cudaMemcpy(d_x, x, N*sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_y, y, N*sizeof(float), cudaMemcpyHostToDevice);
 
-	saxpy<<<4096, 256>>>(N, 2.0, d_x, d_y);
+	saxpy<<<4096, 256>>>(N, 2.0f, d_x, d_y);
 
 	cudaMemcpy(y, d_y, N*sizeof(float), cudaMemcpyDeviceToHost);
+
+        float maxError = 0.0f; //no suffix defines double
+        float vectorSum = 0.0f;
+        for (int i = 0; i < N; i++) {
+	   maxError = max(maxError, abs(4.0f - y[i]));
+           vectorSum += y[i];
+        }
+        printf("Max error: %f\n", maxError);
+        printf("Sum of all vector elements: %f\n", vectorSum);
+
+	// Free device memory
+	cudaFree(d_x);
+	cudaFree(d_y);
+	// Free host memory
+        free(x);
+        free(y);
 }
