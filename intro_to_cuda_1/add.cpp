@@ -13,7 +13,7 @@ int main(void)
     float *x = new float[N];
     float *y = new float[N];
 
-    // inti x and y arrays on the host
+    // init x and y arrays on the host
     for (int i = 0; i < N; i++) {
         x[i] = 1.0f;
         y[i] = 2.0f;
