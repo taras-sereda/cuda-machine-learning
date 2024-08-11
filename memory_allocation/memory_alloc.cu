@@ -6,6 +6,27 @@
 // 2. Host to device memory transfer.
 // 3. Device memory de-allocation.
 
+__device__ __constant__ float PI = 3.14159;
+__device__ __shared__ float E;
+
+__global__ void memory_access()
+{
+    int idx = threadIdx.x;
+
+    printf("thread_idx=%d\n", idx);
+    printf("reading PI value on CUDA PI=%f (shared between all kernels)\n", PI);
+    if (idx == 5)
+    {
+        E = 2.71828; // each thread writes to shared memory;
+    }
+    // this is peculiar!
+    // Threads will all run to this point, and once E will be assigned by thread_idx = 5,
+    // value of E will be rewritten in global memory for all threads to E=2.71828
+    // and corresponding value will be printed by each thread.
+    __syncthreads();
+
+    printf("reading E value on CUDA E=%f (shared between all threads in block)\n", E);
+}
 int main()
 
 {
@@ -17,6 +38,8 @@ int main()
     // set CUDA device for all subsequent host-thread operations.
     int cur_device = 5;
     cudaSetDevice(cur_device);
+
+    memory_access<<<1, 10>>>();
 
     float *A_d, *B_d, *C_d;
     size_t size = 5000000 * sizeof(float);
