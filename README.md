@@ -13,7 +13,7 @@
 
 #### Quering device properties.
 
-`cudaDeviceGetAttribute   `argued being [faster](https://developer.nvidia.com/blog/cuda-pro-tip-the-fast-way-to-query-device-properties/]) , though it's  too verbose
+`cudaDeviceGetAttribute` argued being [faster](https://developer.nvidia.com/blog/cuda-pro-tip-the-fast-way-to-query-device-properties/]) , though it's  too verbose
 
 ```
   int maxBlockDimX;
