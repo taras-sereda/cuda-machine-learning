@@ -25,12 +25,10 @@ __global__ void parent_launch(int *data) {
 }
 
 int main() {
-
     int n_elem = 256;
 
     // allocate host memory
     int * data;
-
     data = (int*)malloc(sizeof(int) * n_elem);
 
     // allocate device memory
