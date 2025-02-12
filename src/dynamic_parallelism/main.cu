@@ -1,4 +1,3 @@
-// #include <__clang_cuda_runtime_wrapper.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <cuda_runtime.h>
