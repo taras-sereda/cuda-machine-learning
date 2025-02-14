@@ -32,7 +32,7 @@ int main()
     printf("\n");
 
     printf("  LUID: %s(undefined on non-Windows)\n", prop.luid);
-    printf("  CanMapHostMemory: %d\n", prop.canMapHostMemory);
+    printf("  CanMapHostMemory: %d\n", prop.canMapHostMemory); // True if device supports zero-copy memory mapping. When cuda threads can access host memory directly
     printf("  Clock rate (KHz): %d\n", prop.clockRate);
     printf("  Memory clock rate (KHz): %d\n", prop.memoryClockRate);
     printf("  Memory bus width (bits): %d\n", prop.memoryBusWidth);
