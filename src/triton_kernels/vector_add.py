@@ -1,10 +1,6 @@
 import torch
 import triton
-
 import triton.language as tl
-
-# DEVICE = triton.runtime.driver.active.get_active_torch_device()
-DEVICE = "cuda:0"
 
 
 @triton.jit
@@ -42,15 +38,18 @@ def add(x: torch.Tensor, y: torch.Tensor):
     return output
 
 
-torch.manual_seed(0)
-size = 98432
-x = torch.rand(size, device=DEVICE)
-y = torch.rand(size, device=DEVICE)
-output_torch = x + y
-output_triton = add(x, y)
-print(output_torch)
-print(output_triton)
-print(
-    f"The maximum difference between torch and triton is "
-    f"{torch.max(torch.abs(output_torch - output_triton))}"
-)
+if __name__ == "__main__":
+    device = "cuda:0"
+    torch.manual_seed(0)
+    size = 98432
+    x = torch.rand(size, device=device)
+    y = torch.rand(size, device=device)
+
+    output_torch = x + y
+    output_triton = add(x, y)
+    print(output_torch)
+    print(output_triton)
+    print(
+        f"The maximum difference between torch and triton is "
+        f"{torch.max(torch.abs(output_torch - output_triton))}"
+    )
