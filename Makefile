@@ -17,7 +17,7 @@ mat_mul: $(SRC_DIR)/mat_mul/main.cu
 	nvcc $(SRC_DIR)/mat_mul/main.cu -o $(BUILD_DIR)/mat_mul
 
 attention: $(SRC_DIR)/attention/main.cu
-	nvcc $(SRC_DIR)/attention/main.cu -o $(BUILD_DIR)/attention
+	nvcc $(SRC_DIR)/attention/main.cu -lcublas -o $(BUILD_DIR)/attention
 
 clean:
 	rm -rf $(BUILD_DIR)

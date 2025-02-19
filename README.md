@@ -24,9 +24,11 @@ To recompile python requiremenets: `uv pip compile requirements.in -o requiremen
 ## General purpose GPU programming and related resources
 
 1. [ZLUDA](https://github.com/vosen/ZLUDA) CUDA-like programming model for AMD GPUs, written in Rust.
-2. [Hemi](https://github.com/harrism/hemi) (No longer maintened) library for writting reusable CPU and GPU code. Single kernel function executable on both device types. More in this [blog post](https://developer.nvidia.com/blog/simple-portable-parallel-c-hemi-2/).
-3. [CUDA device management](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__DEVICE.html) functions refference guide.
-4. [Holistic Trace Analysis](https://hta.readthedocs.io/en/latest/#) performance analysis of CUDA kernels. Allows to collect metrics on kernel execution time for distributed training systems.
+1. [Hemi](https://github.com/harrism/hemi) (No longer maintened) library for writting reusable CPU and GPU code. Single kernel function executable on both device types. More in this [blog post](https://developer.nvidia.com/blog/simple-portable-parallel-c-hemi-2/).
+1. [CUDA device management](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__DEVICE.html) functions refference guide.
+1. [Holistic Trace Analysis](https://hta.readthedocs.io/en/latest/#) performance analysis of CUDA kernels. Allows to collect metrics on kernel execution time for distributed training systems.
+1. [Blog on optimizations for matrix multiplications on GPUs](https://siboehm.com/articles/22/CUDA-MMM)
+1. [CuBLAS docs](https://docs.nvidia.com/cuda/pdf/CUBLAS_Library.pdf)
 
 ### CUDA notes
 
