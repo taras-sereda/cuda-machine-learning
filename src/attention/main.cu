@@ -57,13 +57,19 @@ int main() {
   cublasHandle_t handle;
   cublasStatus_t status;
   status = cublasCreate(&handle);
+
+  int version;
+  status = cublasGetVersion(handle, &version);
+  printf("CUBLAS get version status: %d\n", status);
+  printf("cublas version: %d\n", version);
+
   float alpha = 1.0f;
   float beta = 0.0f;
   cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, a_rows, b_cols, a_cols, &alpha,
               A_device, a_rows, B_device, b_rows, &beta, D_device, a_rows);
 
   cudaMemcpy(D_host, D_device, d_size, cudaMemcpyDeviceToHost);
-  printf("\n");
+
   print_tensor(D_host, a_rows * b_cols);
 
   cudaFree(A_device);
