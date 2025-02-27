@@ -7,6 +7,7 @@
 
 // CUDA runtime
 #include <cuda_runtime.h>
+#include <cublas_v2.h>
 
 int main() {
   int a_rows = 4;
@@ -36,24 +37,27 @@ int main() {
   cudaMemcpy(A_device, A_host, a_size, cudaMemcpyHostToDevice);
   cudaMemcpy(B_device, B_host, b_size, cudaMemcpyHostToDevice);
 
-  dim3 threadsPerBlock(16, 16);
-
-  dim3 numBlocks((b_rows + threadsPerBlock.x - 1) / threadsPerBlock.x,
-                 (a_cols + threadsPerBlock.y - 1) / threadsPerBlock.y);
-
+  cublasHandle_t handle;
   cudaEvent_t start, stop;
+
+  cublasCreate(&handle);
   cudaEventCreate(&start);
   cudaEventCreate(&stop);
 
-  cudaEventRecord(start, NULL);
-  
-  naiveMatMulKernel<<<numBlocks, threadsPerBlock>>>(
-      A_device, B_device, C_device, a_rows, a_cols, b_cols);
+  float alpha = 1.0f;
+  float beta = 0.0f;
 
-  cudaEventRecord(stop, NULL);      
+  cudaEventRecord(start, NULL);
+
+  // CuBLAS uses column-major storage.
+  // When passing matrix pointer to cuBLAS, memory layout alters form row-major to column-major.
+  // This is equivalent to implicit transpose!
+  cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, b_cols, a_rows, a_cols, &alpha, B_device, b_cols, A_device, a_cols, &beta, C_device, b_cols);
+
+  cudaEventRecord(stop, NULL);
   float msecTotal = 0.0f;
   cudaEventElapsedTime(&msecTotal, start, stop);
-  printf("cuBLAS matmul exect time: %f\n", msecTotal);  
+  printf("cuBLAS matmul exect time: %f\n", msecTotal);
 
   cudaMemcpy(C_host, C_device, c_size, cudaMemcpyDeviceToHost);
 
