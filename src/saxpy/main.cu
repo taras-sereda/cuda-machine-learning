@@ -3,6 +3,7 @@
 
 #include <cuda_runtime.h>
 
+// single precision ax + y kernel
 __global__ void saxpy(int n, float a, float* x, float* y) {
 
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
