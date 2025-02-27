@@ -7,7 +7,9 @@ void init(float*data, int n_elem) {
 }
 
 void print_tensor(float* data, int n_elem) {
+    printf("\n");
 	for(int i=0; i<n_elem; i++){
 			printf("%.4f ", data[i]);
 	}
+    printf("\n");
 }
