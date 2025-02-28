@@ -2,7 +2,7 @@
 BUILD_DIR := ./bin
 SRC_DIR := ./src
 
-all: directories dynamic_parallelism device_info mat_mul attention saxpy
+all: directories dynamic_parallelism device_info mat_mul mat_mul_cublas attention saxpy
 
 directories:
 	mkdir -p bin
@@ -15,6 +15,9 @@ device_info: $(SRC_DIR)/device_info/main.cu
 
 mat_mul: $(SRC_DIR)/mat_mul/main.cu
 	nvcc $(SRC_DIR)/mat_mul/main.cu -o $(BUILD_DIR)/mat_mul
+
+mat_mul_cublas: $(SRC_DIR)/mat_mul_cublas/main.cu
+	nvcc $(SRC_DIR)/mat_mul_cublas/main.cu -o $(BUILD_DIR)/mat_mul_cublas -lcublas
 
 saxpy: $(SRC_DIR)/saxpy/main.cu
 	nvcc $(SRC_DIR)/saxpy/main.cu -o $(BUILD_DIR)/saxpy
