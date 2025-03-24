@@ -11,6 +11,17 @@ else
     BIN_SUFFIX :=
 endif
 
+PTX ?= 0
+ifeq ($(PTX), 1)
+    NVCC_FLAGS += -ptx
+    BIN_SUFFIX := .ptx
+else
+    NVCC_FLAGS :=
+    BIN_SUFFIX :=
+endif
+
+
+
 all: directories dynamic_parallelism device_info mat_mul mat_mul_cublas attention saxpy
 
 directories:
@@ -38,5 +49,7 @@ attention: $(SRC_DIR)/attention/main.cu
 debug:
 	$(MAKE) DEBUG=1
 
+ptx:
+	$(MAKE) PTX=1
 clean:
 	rm -rf $(BUILD_DIR)
