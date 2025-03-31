@@ -9,9 +9,10 @@ int main()
   int nDevices;
 
   cudaError_t err = cudaGetDeviceCount(&nDevices);
-  printf("%s\n", cudaGetErrorString(err));
   if (err != cudaSuccess)
     printf("%s\n", cudaGetErrorString(err));
+
+  printf("\nCUDA Runtime version: %d.%d\n\n", CUDART_VERSION / 1000, (CUDART_VERSION % 100) / 10); // CUDART_VERSION is defined in cuda_runtime_api.h
 
   for (int devIdx = 0; devIdx < nDevices; devIdx++)
   {
