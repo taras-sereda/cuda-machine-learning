@@ -8,7 +8,7 @@
 ```bash
 uv venv --python=python3.13
 source .venv/bin/activate
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 ```
 
 To recompile python requiremenets: `uv pip compile requirements.in -o requirements.txt`
