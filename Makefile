@@ -1,13 +1,13 @@
 BUILD_DIR := ./bin
 SRC_DIR := ./src
 
+NVCC_FLAGS := --ptxas-options=-v
 # Debug mode can be enabled by running: make DEBUG=1
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
-    NVCC_FLAGS := -lineinfo
+    NVCC_FLAGS += -lineinfo
     BIN_SUFFIX := _debug
 else
-    NVCC_FLAGS :=
     BIN_SUFFIX :=
 endif
 
@@ -16,7 +16,6 @@ ifeq ($(PTX), 1)
     NVCC_FLAGS += -ptx
     BIN_SUFFIX := .ptx
 else
-    NVCC_FLAGS :=
     BIN_SUFFIX :=
 endif
 
@@ -34,6 +33,7 @@ device_info: $(SRC_DIR)/device_info/main.cu
 	nvcc $(NVCC_FLAGS) $< -o $(BUILD_DIR)/$@$(BIN_SUFFIX)
 
 mat_mul: $(SRC_DIR)/mat_mul/main.cu
+	$(info Using NVCC_FLAGS: $(NVCC_FLAGS))
 	nvcc $(NVCC_FLAGS) $< -o $(BUILD_DIR)/$@$(BIN_SUFFIX)
 
 mat_mul_cublas: $(SRC_DIR)/mat_mul_cublas/main.cu
