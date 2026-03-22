@@ -18,6 +18,8 @@ __global__ void matTransposeKernel(Matrix A, Matrix B) {
 
 
     __shared__ float tile[BLOCK_SIZE][BLOCK_SIZE];
+    //Bank conflict resolvement magic.
+    //__shared__ float tile[BLOCK_SIZE][BLOCK_SIZE+1];
 
 
     if (row_idx < A.height && col_idx < A.width) {
@@ -26,11 +28,12 @@ __global__ void matTransposeKernel(Matrix A, Matrix B) {
     }
     __syncthreads();
 
-    // Why?
+    // Transposed tile
     int trans_row = blockIdx.x * BLOCK_SIZE + threadIdx.y;
     int trans_col = blockIdx.y * BLOCK_SIZE + threadIdx.x;
 
     if (trans_row < B.height && trans_col < B.width) {
+	// Coalesced write
         B.elements[B.width * trans_row + trans_col] =
            tile[threadIdx.x][threadIdx.y];
     }
