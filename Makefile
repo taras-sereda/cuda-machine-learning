@@ -21,7 +21,8 @@ endif
 
 
 
-all: directories dynamic_parallelism device_info mat_mul mat_mul_cublas attention saxpy
+#all: directories dynamic_parallelism device_info mat_mul mat_mul_cublas attention saxpy
+all: directories dynamic_parallelism mat_mul mat_mul_cublas attention mat_transpose
 
 directories:
 	mkdir -p $(BUILD_DIR)
@@ -43,6 +44,9 @@ saxpy: $(SRC_DIR)/saxpy/main.cu
 	nvcc $(NVCC_FLAGS) $< -o $(BUILD_DIR)/$@$(BIN_SUFFIX)
 
 attention: $(SRC_DIR)/attention/main.cu
+	nvcc $(NVCC_FLAGS) $< -o $(BUILD_DIR)/$@$(BIN_SUFFIX)
+
+mat_transpose: $(SRC_DIR)/mat_transpose/main.cu
 	nvcc $(NVCC_FLAGS) $< -o $(BUILD_DIR)/$@$(BIN_SUFFIX)
 
 # Debug target - builds everything with DEBUG=1
