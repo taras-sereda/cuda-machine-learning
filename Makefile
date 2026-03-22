@@ -1,7 +1,12 @@
 BUILD_DIR := ./bin
 SRC_DIR := ./src
 
-NVCC_FLAGS := --ptxas-options=-v
+GPU_ARCH := $(shell nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -n 1 | tr -d '.')
+ifeq ($(GPU_ARCH),)
+    $(warning Could not detect GPU arch, defaulting to sm_120)
+    GPU_ARCH := 120
+endif
+NVCC_FLAGS := --ptxas-options=-v -arch=sm_$(GPU_ARCH)
 # Debug mode can be enabled by running: make DEBUG=1
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)

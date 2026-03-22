@@ -3,7 +3,7 @@
 
 #include <cuda_runtime.h>
 
-#define BLOCK_SIZE 32
+#define BLOCK_SIZE 16 
 
 typedef struct {
     int width;
@@ -13,8 +13,8 @@ typedef struct {
 
 __global__ void matTransposeKernel(Matrix A, Matrix B) {
 
-    int row_idx = blockDim.y * BLOCK_SIZE + threadIdx.y;
-    int col_idx = blockDim.x * BLOCK_SIZE + threadIdx.x;
+    int row_idx = blockIdx.y * BLOCK_SIZE + threadIdx.y;
+    int col_idx = blockIdx.x * BLOCK_SIZE + threadIdx.x;
 
 
     __shared__ float tile[BLOCK_SIZE][BLOCK_SIZE];
@@ -27,15 +27,15 @@ __global__ void matTransposeKernel(Matrix A, Matrix B) {
     __syncthreads();
 
     // Why?
-    int trans_row = blockIdx.y * BLOCK_SIZE + threadIdx.x; 
-    int trans_col = blockDim.x * BLOCK_SIZE + threadIdx.y;
+    int trans_row = blockIdx.x * BLOCK_SIZE + threadIdx.y;
+    int trans_col = blockIdx.y * BLOCK_SIZE + threadIdx.x;
 
     if (trans_row < B.height && trans_col < B.width) {
-        B.elements[B.width * trans_col + trans_row] = 
-           tile[threadIdx.y][threadIdx.x];
+        B.elements[B.width * trans_row + trans_col] =
+           tile[threadIdx.x][threadIdx.y];
     }
 }
-
+ 
 void init_matrix(float *elements, int width, int height) {
 
     for(int i=0; i< height; i++){
@@ -54,14 +54,14 @@ void check_res(Matrix A, Matrix B) {
             int a_idx = A.width * i + j;
             int b_idx = A.height * j + i;
             printf("Matrix A [%d][%d] = %.4f\n", i, j, A.elements[a_idx]);
-            printf("Matrix B [%d][%d] = %.4f\n", i, j, B.elements[b_idx]);
+            printf("Matrix B [%d][%d] = %.4f\n", j, i, B.elements[b_idx]);
         }
     }
 }
 
 int main(int argc, char** argv) {
-    int height = 8;
-    int width = 4;
+    int height = 1024;
+    int width = 2049;
     Matrix h_A;
     h_A.height = height;
     h_A.width = width;
@@ -93,8 +93,12 @@ int main(int argc, char** argv) {
     dim3 dimGrid((h_A.width + BLOCK_SIZE -1)/BLOCK_SIZE, (h_A.height + BLOCK_SIZE -1)/BLOCK_SIZE);
 
     matTransposeKernel<<<dimGrid, dimBlock>>>(d_A, d_B);
-    cudaMemcpy(h_B.elements, d_B.elements, B_size, cudaMemcpyDeviceToHost);
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("Kernel launch failed: %s\n", cudaGetErrorString(err));
+    }
     cudaDeviceSynchronize();
+    cudaMemcpy(h_B.elements, d_B.elements, B_size, cudaMemcpyDeviceToHost);
 
     check_res(h_A, h_B);
 
