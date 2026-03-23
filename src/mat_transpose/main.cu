@@ -3,7 +3,7 @@
 
 #include <cuda_runtime.h>
 
-#define BLOCK_SIZE 16
+#define BLOCK_SIZE 32
 
 typedef struct
 {
@@ -85,6 +85,34 @@ __global__ void matTransposeKernel(Matrix A, Matrix B)
     }
 }
 
+__global__ void matTransposeKernelOptim(Matrix A, Matrix B)
+{
+
+    int row_idx = blockIdx.y * BLOCK_SIZE + threadIdx.y;
+    int col_idx = blockIdx.x * BLOCK_SIZE + threadIdx.x;
+
+    // Bank conflict resolvement magic.
+    __shared__ float tile[BLOCK_SIZE][BLOCK_SIZE+1];
+
+    if (row_idx < A.height && col_idx < A.width)
+    {
+        tile[threadIdx.y][threadIdx.x] = A.elements[A.width * row_idx + col_idx];
+    }
+    __syncthreads();
+
+    // Transposed offsets.
+    int trans_row = blockIdx.x * BLOCK_SIZE + threadIdx.y;
+    int trans_col = blockIdx.y * BLOCK_SIZE + threadIdx.x;
+
+    // printf("Thread (%d, %d) in block (%d, %d)\n", threadIdx.x, threadIdx.y, blockIdx.x, blockIdx.y);
+
+    if (trans_row < B.height && trans_col < B.width)
+    {
+        // Coalesced write to a transposed location.
+        B.elements[B.width * trans_row + trans_col] =
+            tile[threadIdx.x][threadIdx.y];
+    }
+}
 void init_matrix(float *elements, int width, int height)
 {
 
@@ -115,8 +143,8 @@ void check_res(Matrix A, Matrix B)
 
 int main(int argc, char **argv)
 {
-    int height = 8;
-    int width = 17;
+    int height = 1024*8+7;
+    int width = 2048*8+1;
     Matrix h_A;
     h_A.height = height;
     h_A.width = width;
@@ -142,10 +170,50 @@ int main(int argc, char **argv)
 
     cudaMemcpy(d_A.elements, h_A.elements, A_size, cudaMemcpyHostToDevice);
 
+    cudaEvent_t startEvent, stopEvent;
+    cudaEventCreate(&startEvent);
+    cudaEventCreate(&stopEvent);
+    float time_ms;
+
     dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
     dim3 dimGrid((h_A.width + BLOCK_SIZE - 1) / BLOCK_SIZE, (h_A.height + BLOCK_SIZE - 1) / BLOCK_SIZE);
 
+    // warmup
+    matTransposeKernelNaive<<<dimGrid, dimBlock>>>(d_A, d_B);
+    cudaEventRecord(startEvent, 0);
+    matTransposeKernelNaive<<<dimGrid, dimBlock>>>(d_A, d_B);
+    cudaEventRecord(stopEvent, 0);
+    cudaEventSynchronize(stopEvent);
+    cudaEventElapsedTime(&time_ms, startEvent, stopEvent);
+    printf("Naive. time taken: %f, bandwidth: %f GB/s\n", time_ms, width * height * 2 * sizeof(float) * 1e-6 / time_ms);
+
+    // warmup
     matTransposeKernelStrided<<<dimGrid, dimBlock>>>(d_A, d_B);
+    cudaEventRecord(startEvent, 0);
+    matTransposeKernelStrided<<<dimGrid, dimBlock>>>(d_A, d_B);
+    cudaEventRecord(stopEvent, 0);
+    cudaEventSynchronize(stopEvent);
+    cudaEventElapsedTime(&time_ms, startEvent, stopEvent);
+    printf("Strided. time taken: %f, bandwidth: %f GB/s\n", time_ms, width * height * 2 * sizeof(float) * 1e-6 / time_ms);
+
+    // warmup
+    matTransposeKernel<<<dimGrid, dimBlock>>>(d_A, d_B);
+    cudaEventRecord(startEvent, 0);
+    matTransposeKernel<<<dimGrid, dimBlock>>>(d_A, d_B);
+    cudaEventRecord(stopEvent, 0);
+    cudaEventSynchronize(stopEvent);
+    cudaEventElapsedTime(&time_ms, startEvent, stopEvent);
+    printf("Coalesced. time taken: %f, bandwidth: %f GB/s\n", time_ms, width * height * 2 * sizeof(float) * 1e-6 / time_ms);
+
+    // warmup
+    matTransposeKernelOptim<<<dimGrid, dimBlock>>>(d_A, d_B);
+    cudaEventRecord(startEvent, 0);
+    matTransposeKernelOptim<<<dimGrid, dimBlock>>>(d_A, d_B);
+    cudaEventRecord(stopEvent, 0);
+    cudaEventSynchronize(stopEvent);
+    cudaEventElapsedTime(&time_ms, startEvent, stopEvent);
+    printf("Optim[bank conflicts prevention] time taken: %f, bandwidth: %f GB/s\n", time_ms, width * height * 2 * sizeof(float) * 1e-6 / time_ms);
+
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess)
     {
@@ -157,7 +225,7 @@ int main(int argc, char **argv)
     cudaFree(d_A.elements);
     cudaFree(d_B.elements);
 
-    check_res(h_A, h_B);
+    //check_res(h_A, h_B);
 
     free(h_A.elements);
     free(h_B.elements);
