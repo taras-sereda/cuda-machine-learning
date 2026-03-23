@@ -24,6 +24,37 @@ __global__ void matTransposeKernelNaive(Matrix A, Matrix B)
             A.elements[A.width * row_idx + col_idx];
     }
 }
+
+__global__ void matTransposeKernelStrided(Matrix A, Matrix B)
+{
+
+    int row_idx = blockIdx.y * BLOCK_SIZE + threadIdx.y;
+    int col_idx = blockIdx.x * BLOCK_SIZE + threadIdx.x;
+
+    __shared__ float tile[BLOCK_SIZE][BLOCK_SIZE];
+    // Bank conflict resolvement magic.
+    //__shared__ float tile[BLOCK_SIZE][BLOCK_SIZE+1];
+
+    if (row_idx < A.height && col_idx < A.width)
+    {
+        tile[threadIdx.y][threadIdx.x] = A.elements[A.width * row_idx + col_idx];
+    }
+    __syncthreads();
+
+    // Transposed offsets.
+    int trans_row = blockIdx.x * BLOCK_SIZE + threadIdx.x;
+    int trans_col = blockIdx.y * BLOCK_SIZE + threadIdx.y;
+
+    // printf("Thread (%d, %d) in block (%d, %d)\n", threadIdx.x, threadIdx.y, blockIdx.x, blockIdx.y);
+
+    if (trans_row < B.height && trans_col < B.width)
+    {
+        // Coalesced write to a transposed location.
+        B.elements[B.width * trans_row + trans_col] =
+            tile[threadIdx.y][threadIdx.x];
+    }
+}
+
 __global__ void matTransposeKernel(Matrix A, Matrix B)
 {
 
@@ -114,7 +145,7 @@ int main(int argc, char **argv)
     dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
     dim3 dimGrid((h_A.width + BLOCK_SIZE - 1) / BLOCK_SIZE, (h_A.height + BLOCK_SIZE - 1) / BLOCK_SIZE);
 
-    matTransposeKernel<<<dimGrid, dimBlock>>>(d_A, d_B);
+    matTransposeKernelStrided<<<dimGrid, dimBlock>>>(d_A, d_B);
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess)
     {
