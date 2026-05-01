@@ -21,7 +21,7 @@ endif
 
 
 
-all: directories dynamic_parallelism device_info mat_mul mat_mul_cublas attention saxpy
+all: directories dynamic_parallelism device_info mat_mul mat_mul_cublas attention saxpy, atomic-non-determinism
 
 directories:
 	mkdir -p $(BUILD_DIR)
@@ -45,6 +45,8 @@ saxpy: $(SRC_DIR)/saxpy/main.cu
 attention: $(SRC_DIR)/attention/main.cu
 	nvcc $(NVCC_FLAGS) $< -o $(BUILD_DIR)/$@$(BIN_SUFFIX)
 
+atomic-non-determinism: $(SRC_DIR)/atomic-non-determinism/main.cu
+	nvcc $(NVCC_FLAGS) $< -o $(BUILD_DIR)/$@$(BIN_SUFFIX)
 # Debug target - builds everything with DEBUG=1
 debug:
 	$(MAKE) DEBUG=1

@@ -8,23 +8,32 @@ __global__ void atomic_add(float *acc, int n) {
 }
 
 int main() {
-  int n = 128;
+  int n_repeat = 10;
+  int n = 1024;
 
-  float h_data[n];
-  for (int i = 0; i < n; i++)
-    h_data[i] = 0.0f;
+  float results[n_repeat];
 
-  float *d_data;
-  cudaMalloc(&d_data, sizeof(float) * n);
-  cudaMemset(d_data, 0, sizeof(float) * n);
-  int n_th = 256;
-  int n_blck = (n + n_th - 1) / n_th;
+  for (int iter = 0; iter < n_repeat; iter++) {
 
-  atomic_add<<<n_blck, n_th>>>(d_data, n);
+    float *d_data;
+    cudaMalloc(&d_data, sizeof(float) * n);
+    cudaMemset(d_data, 0, sizeof(float) * n);
+    int n_th = 256;
+    int n_blck = (n + n_th - 1) / n_th;
 
-  cudaMemcpy(h_data, d_data, sizeof(float) * n, cudaMemcpyDeviceToHost);
-  printf("acc[0] = %f\n", h_data[0]);
+    atomic_add<<<n_blck, n_th>>>(d_data, n);
 
-  cudaFree(d_data);
+    cudaMemcpy(&results[iter], d_data, sizeof(float), cudaMemcpyDeviceToHost);
+    printf("iter %d: result = %.10f\n", iter, results[iter]);
+
+    cudaFree(d_data);
+  }
+
+
+  for (int iter = 1; iter < n_repeat; iter++) {
+    float drift = abs(results[iter-1] - results[iter]);
+    printf("iter %d: drift wrt prev iter = %.10f\n", iter, drift);
+  }
+
   return 0;
 }
