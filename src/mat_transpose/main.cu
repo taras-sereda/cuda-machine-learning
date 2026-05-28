@@ -113,6 +113,36 @@ __global__ void matTransposeKernelOptim(Matrix A, Matrix B)
             tile[threadIdx.x][threadIdx.y];
     }
 }
+
+__global__ void matTransposeKernel1DShmem(Matrix A, Matrix B)
+{
+
+    int row_idx = blockIdx.y * BLOCK_SIZE + threadIdx.y;
+    int col_idx = blockIdx.x * BLOCK_SIZE + threadIdx.x;
+
+    // Bank conflict resolvement magic.
+    __shared__ float tile[BLOCK_SIZE*(BLOCK_SIZE+1)];
+    uint stride = BLOCK_SIZE + 1;
+
+    if (row_idx < A.height && col_idx < A.width)
+    {
+        tile[threadIdx.y * stride + threadIdx.x] = A.elements[A.width * row_idx + col_idx];
+    }
+    __syncthreads();
+
+    // Transposed offsets.
+    int trans_row = blockIdx.x * BLOCK_SIZE + threadIdx.y;
+    int trans_col = blockIdx.y * BLOCK_SIZE + threadIdx.x;
+
+    // printf("Thread (%d, %d) in block (%d, %d)\n", threadIdx.x, threadIdx.y, blockIdx.x, blockIdx.y);
+
+    if (trans_row < B.height && trans_col < B.width)
+    {
+        // Coalesced write to a transposed location.
+        B.elements[B.width * trans_row + trans_col] =
+            tile[threadIdx.x * stride + threadIdx.y];
+    }
+}
 void init_matrix(float *elements, int width, int height)
 {
 
@@ -213,6 +243,15 @@ int main(int argc, char **argv)
     cudaEventSynchronize(stopEvent);
     cudaEventElapsedTime(&time_ms, startEvent, stopEvent);
     printf("Optim[bank conflicts prevention] time taken: %f, bandwidth: %f GB/s\n", time_ms, width * height * 2 * sizeof(float) * 1e-6 / time_ms);
+
+    // warmup
+    matTransposeKernel1DShmem<<<dimGrid, dimBlock>>>(d_A, d_B);
+    cudaEventRecord(startEvent, 0);
+    matTransposeKernel1DShmem<<<dimGrid, dimBlock>>>(d_A, d_B);
+    cudaEventRecord(stopEvent, 0);
+    cudaEventSynchronize(stopEvent);
+    cudaEventElapsedTime(&time_ms, startEvent, stopEvent);
+    printf("1D shem time taken: %f, bandwidth: %f GB/s\n", time_ms, width * height * 2 * sizeof(float) * 1e-6 / time_ms);
 
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess)
